@@ -176,6 +176,53 @@ describe('Simplify spread parameters', () => {
   return utf8ArrayToStr["test"](__globalObject)
 }`.replaceAll(/\r\n/g, '\n'));
     });
+    it('should handle nested functions expression with zero parameters', () => {
+        const code = `var test = function (...__Buffer) {
+  __Buffer["length"] = 0;
+  return function(...__TextDecoder) {
+    __TextDecoder["length"] = 0;
+    const utf8ArrayToStr = new RegExp("\\n");
+    return utf8ArrayToStr["test"](__globalObject)
+  }
+}`;
+        const result = simplifySpreadParameters(code).replaceAll(/\r\n/g, '\n');
+        
+        strictEqual(result, `var test = function() {
+  return function() {
+    const utf8ArrayToStr = new RegExp("\\n");
+    return utf8ArrayToStr["test"](__globalObject)
+  };
+}`.replaceAll(/\r\n/g, '\n'));
+    });
+    it('should handle functions expression with zero parameters within var_65', () => {
+        const code = `var test = function (...__Buffer) {
+  var_65(__Buffer["length"] = 0);
+  const utf8ArrayToStr = new RegExp("\\n");
+  return utf8ArrayToStr["test"](__globalObject)
+}`;
+        const result = simplifySpreadParameters(code).replaceAll(/\r\n/g, '\n');
+        
+        strictEqual(result, `var test = function() {
+  var_65();
+  const utf8ArrayToStr = new RegExp("\\n");
+  return utf8ArrayToStr["test"](__globalObject)
+}`.replaceAll(/\r\n/g, '\n'));
+    });
+    
+    xit('should handle functions expression with zero parameters and local parameters', () => {
+        const code = `var test = function (...__Buffer) {
+  __Buffer["length"] = 0, __Buffer[-7] = "";
+  const utf8ArrayToStr = new RegExp("\\n");
+  return utf8ArrayToStr["test"](__globalObject)
+}`;
+        const result = simplifySpreadParameters(code).replaceAll(/\r\n/g, '\n');
+        
+        strictEqual(result, `var test = function() {
+  local_a = "";
+  const utf8ArrayToStr = new RegExp("\\n");
+  return utf8ArrayToStr["test"](__globalObject)
+}`.replaceAll(/\r\n/g, '\n'));
+    });
 
     xit('should handle functions with one parameter', () => {
         const code = `function E3Kjdm(...__TextDecoder) {
