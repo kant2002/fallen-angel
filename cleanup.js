@@ -1,7 +1,8 @@
 import fs from "fs/promises"
 import pkg from 'js-beautify';
 const { js: beautify } = pkg;
-import { inlineStringConcats, parseParameters, replaceParameters, extractArrayValues, extractParameters } from "./lib/index.js";
+import { inlineStringConcats, parseParameters, replaceParameters, extractArrayValues, 
+    extractParameters, simplifySpreadParameters } from "./lib/index.js";
 
 const content = await fs.readFile("gsap-3.12.2.min.js", "utf-8");
 const { cleaned, parameters, environment } = extractParameters(content);
@@ -17,6 +18,7 @@ beautified = replaceParameters(beautified, parsedParameters, environment);
 const staticValues = extractArrayValues(beautified, "CMYRQT");
 beautified = replaceParameters(beautified, staticValues, "CMYRQT");
 beautified = inlineStringConcats(beautified);
+beautified = simplifySpreadParameters(beautified);
 //console.dir(extractArrayValues(beautified, "CMYRQT"), { depth: 2 });
 
 await fs.writeFile("gsap-3.12.2.min.cleaned.js", beautified);
