@@ -144,3 +144,60 @@ describe('Array Values Extraction', () => {
         strictEqual(result[2], "\"line3\"");
     });
 });
+
+
+
+describe('Simplify spread parameters', () => {
+
+    it('should handle functions with zero parameters', () => {
+        const code = `function(...__Buffer) {
+  __Buffer["length"] = 0;
+  const utf8ArrayToStr = new RegExp("\n");
+  return utf8ArrayToStr["test"](__globalObject)
+}`;
+        const result = simplifySpreadParameters(code);
+        
+        strictEqual(result, `function() {
+  const utf8ArrayToStr = new RegExp("\n");
+  return utf8ArrayToStr["test"](__globalObject)
+}`);
+    });
+
+    it('should handle functions with one parameter', () => {
+        const code = `function E3Kjdm(...__TextDecoder) {
+    var_65(__TextDecoder["length"] = 1, __TextDecoder[-7] = "");
+    for (__TextDecoder[-85] = 0; __TextDecoder[-85] < __TextDecoder[0].length * 32; __TextDecoder[-85] += 8) 
+    __TextDecoder[-7] += String.fromCharCode(__TextDecoder[0][__TextDecoder[-85] >> 5] >>> 24 - __TextDecoder[-85] % 32 & 255);
+    return __TextDecoder[-7]
+}`;
+        const result = simplifySpreadParameters(code);
+        
+        strictEqual(result, `function E3Kjdm(param_a) {
+    var_65(local_a = "");
+    for (local_b = 0; local_b < param_a.length * 32; local_b += 8) 
+    local_a += String.fromCharCode(param_a[local_b >> 5] >>> 24 - local_b % 32 & 255);
+    return local_a
+}`);
+    });
+
+    it('should handle functions with two parameter', () => {
+        const code = `function var_63(...DVg62f) {
+    var_65(DVg62f["length"] = 2, DVg62f[74] = 0xdeadbeef ^ DVg62f[1], DVg62f["b"] = 0x41c6ce57 ^ DVg62f[1]);
+    for (var global = 0, __globalObject; global < DVg62f[0].length; global++) {
+      var_65(__globalObject = DVg62f[0].charCodeAt(global), DVg62f[74] = ZVvKFvy(DVg62f[74] ^ __globalObject, 0x9e3779b1), DVg62f["b"] = ZVvKFvy(DVg62f["b"] ^ __globalObject, 0x5f356495))
+    }
+    var_65(DVg62f[74] = ZVvKFvy(DVg62f[74] ^ DVg62f[74] >>> 16, 2246822507) ^ ZVvKFvy(DVg62f["b"] ^ DVg62f["b"] >>> 13, 3266489909), DVg62f["b"] = ZVvKFvy(DVg62f["b"] ^ DVg62f["b"] >>> 16, 2246822507) ^ ZVvKFvy(DVg62f[74] ^ DVg62f[74] >>> 13, 3266489909));
+    return 0x100000000 * (2097151 & DVg62f["b"]) + (DVg62f[74] >>> 0)
+}`;
+        const result = simplifySpreadParameters(code);
+        
+        strictEqual(result, `function var_63(param_a, param_b) {
+    local_a = 0xdeadbeef ^ param_b, local_b = 0x41c6ce57 ^ param_b;
+    for (var global = 0, __globalObject; global < DVg62f[0].length; global++) {
+      var_65(__globalObject = param_a.charCodeAt(global), local_a = ZVvKFvy(local_a ^ __globalObject, 0x9e3779b1), local_b = ZVvKFvy(local_b ^ __globalObject, 0x5f356495))
+    }
+    var_65(local_a = ZVvKFvy(local_a ^ local_a >>> 16, 2246822507) ^ ZVvKFvy(local_b ^ local_b >>> 13, 3266489909), local_b = ZVvKFvy(local_b ^ local_b >>> 16, 2246822507) ^ ZVvKFvy(local_a ^ local_a >>> 13, 3266489909));
+    return 0x100000000 * (2097151 & local_b) + (local_a >>> 0)
+}`);
+    });
+});
