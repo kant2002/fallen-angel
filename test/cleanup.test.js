@@ -209,7 +209,7 @@ describe('Simplify spread parameters', () => {
 }`.replaceAll(/\r\n/g, '\n'));
     });
     
-    xit('should handle functions expression with zero parameters and local parameters', () => {
+    it('should handle functions expression with zero parameters and local parameters', () => {
         const code = `var test = function (...__Buffer) {
   __Buffer["length"] = 0, __Buffer[-7] = "";
   const utf8ArrayToStr = new RegExp("\\n");
