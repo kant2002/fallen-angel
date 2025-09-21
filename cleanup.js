@@ -1,8 +1,14 @@
 import fs from "fs/promises"
 import pkg from 'js-beautify';
 const { js: beautify } = pkg;
-import { parse as recastParse, print } from 'recast';
+import { parse as recastParse, print, visit } from 'recast';
 import { parse as babelParse } from '@babel/parser';
+import {
+  Type,
+  builtInTypes,
+  builders as b,
+  finalize,
+} from "ast-types";
 
 /**
  * Unescape a JS string literal, e.g. turn "\\n" into actual newline
@@ -14,6 +20,10 @@ function unescapeJSString(str) {
     return eval("\"" + str + "\"");
 }
 
+function escapeJSString(str) {
+    return str.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+}
+
 function tryParseToAst(code) {
   // Use @babel/parser via recast to get a stable AST for pretty printing
   try {
@@ -22,6 +32,7 @@ function tryParseToAst(code) {
         parse(source) {
           return babelParse(source, {
             sourceType: "unambiguous",
+            strictMode: false,
             plugins: [
               "classProperties",
               "optionalChaining",
@@ -35,7 +46,12 @@ function tryParseToAst(code) {
     });
     return ast;
   } catch (e) {
+    console.dir(e);
+    console.log(code.slice(e.pos-100, e.pos));
+    console.log("^")
+    console.log(code.slice(e.pos,e.pos + 200));
     console.log("Failed to parse to AST:", e);
+    throw new Error("Failed to parse to AST", e);
     return null;
   }
 }
@@ -112,7 +128,7 @@ function replaceParameters(code, parameters, environment) {
 function extractArrayValues(code, variableName) {
     const ast = tryParseToAst(code);
     const constVariables = ast.program.body[0].body.body.filter(n => n.kind === "const" && n.declarations[0].id.name === variableName);
-    return constVariables[0].declarations[0].init.elements.map(e => e.type === "StringLiteral" ? "\"" + e.value.replace("\n", "\\n") + "\"" : e.value);
+    return constVariables[0].declarations[0].init.elements.map(e => e.type === "StringLiteral" ? "\"" + escapeJSString(e.value) + "\"" : e.value);
 }
 
 const content = await fs.readFile("gsap-3.12.2.min.js", "utf-8");
@@ -129,6 +145,24 @@ const parsedParameters = parseParameters(parameters);
 beautified = replaceParameters(beautified, parsedParameters, environment);
 const staticValues = extractArrayValues(beautified, "CMYRQT");
 beautified = replaceParameters(beautified, staticValues, "CMYRQT");
+beautified = astToCode(visit(tryParseToAst(beautified), {
+    visitBinaryExpression(path) {
+        // Replace "a" + "b" with "ab"
+        if (path.node.operator === "+") {
+            if (path.node.left.type === "StringLiteral" && path.node.right.type === "StringLiteral") {
+                //path.replace(b.stringLiteral(path.node.left.value + path.node.right.value));
+                path.replace({
+                    type: "StringLiteral",
+                    value: path.node.left.value + path.node.right.value
+                })
+                return false;
+                //console.log(path);
+                //return path;
+            }
+        }
+        this.traverse(path);
+    }
+}));
 //console.dir(extractArrayValues(beautified, "CMYRQT"), { depth: 2 });
 
 await fs.writeFile("gsap-3.12.2.min.cleaned.js", beautified);
