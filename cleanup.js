@@ -2,7 +2,7 @@ import fs from "fs/promises"
 import pkg from 'js-beautify';
 const { js: beautify } = pkg;
 import { inlineStringConcats, parseParameters, replaceParameters, extractArrayValues, 
-    extractParameters, simplifySpreadParameters } from "./lib/index.js";
+    extractParameters, simplifySpreadParameters, simplifyDecoding, helperFunctionCode } from "./lib/index.js";
 
 const content = await fs.readFile("gsap-3.12.2.min.js", "utf-8");
 const { cleaned, parameters, environment } = extractParameters(content);
@@ -19,7 +19,8 @@ const staticValues = extractArrayValues(beautified, "CMYRQT");
 beautified = replaceParameters(beautified, staticValues, "CMYRQT");
 beautified = inlineStringConcats(beautified);
 beautified = simplifySpreadParameters(beautified);
-//console.dir(extractArrayValues(beautified, "CMYRQT"), { depth: 2 });
+beautified = simplifyDecoding(beautified); // You can detect this in code by simply searching for 88 ? 13 : 14
+beautified += helperFunctionCode;
 
 await fs.writeFile("gsap-3.12.2.min.cleaned.js", beautified);
 await fs.writeFile("gsap-3.12.2.min.parameters.js", parameters);

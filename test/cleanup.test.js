@@ -1,22 +1,10 @@
 import { strictEqual } from 'assert';
-import { parseParameters, extractArrayValues, simplifySpreadParameters } from '../lib/index.js';
-
-describe('Cleanup Functionality', () => {
-    it('should remove temporary files', () => {
-        // Test case logic here
-        strictEqual(true, true);
-    });
-
-    it('should reset application state', () => {
-        // Test case logic here
-        strictEqual(true, true);
-    });
-
-    it('should reset application state', () => {
-        // Test case logic here
-        strictEqual(true, true);
-    });
-});
+import { 
+    parseParameters,
+    extractArrayValues,
+    simplifySpreadParameters,
+    simplifyDecoding
+} from '../lib/index.js';
 
 describe('Parameter Parsing', () => {
     it('should parse parameters correctly', () => {
@@ -147,6 +135,131 @@ describe('Array Values Extraction', () => {
 
 
 
+describe('Simplify decoding', () => {
+    it('should handle functions without var', () => {
+        const code = `function __Array(__Array) {
+                    var utf8ArrayToStr = "fAKVLrIYbjcuM}OnFdQB,1<@zvlqyam:4&\\"P;w*x82/%\`.+kZt)eU0^oGRXp!CDE|N5i7gT{s=9]$~JHhS?_36#(>[W",
+                      btO3Nyf, __globalObject, __Buffer, __TextDecoder, __Uint8Array, __String, Blob;
+                    var_65(btO3Nyf = "" + (__Array || ""), __globalObject = btO3Nyf.length, __Buffer = [], __TextDecoder = 0, __Uint8Array = 0, __String = -1);
+                    for (Blob = 0; Blob < __globalObject; Blob++) {
+                      var URL = utf8ArrayToStr.indexOf(btO3Nyf[Blob]);
+                      if (URL === -1) continue;
+                      if (__String < 0) {
+                        __String = URL
+                      } else {
+                        var_65(__String += URL * 91, __TextDecoder |= __String << __Uint8Array, __Uint8Array += (__String & 8191) > 88 ? 13 : 14);
+                        do {
+                          var_65(__Buffer.push(__TextDecoder & 255), __TextDecoder >>= 8, __Uint8Array -= 8)
+                        } while (__Uint8Array > 7);
+                        __String = -1
+                      }
+                    }
+                    if (__String > -1) {
+                      __Buffer.push((__TextDecoder | __String << __Uint8Array) & 255)
+                    }
+                    return dkJAw8(__Buffer)
+                  }`;
+        const result = simplifyDecoding(code).replaceAll(/\r\n/g, '\n');
+        
+        strictEqual(result, `function __Array(__Array) {
+  const __Buffer = decodeHelper(
+    "fAKVLrIYbjcuM}OnFdQB,1<@zvlqyam:4&\\"P;w*x82/%\`.+kZt)eU0^oGRXp!CDE|N5i7gT{s=9]$~JHhS?_36#(>[W",
+    __Array
+  );;
+
+  return dkJAw8(__Buffer)
+}`.replaceAll(/\r\n/g, '\n'));
+    });
+    it('should handle functions with var', () => {
+        const code = `function __Buffer(param_0) {
+                    var_65(
+                      local_0 = "uOpGbEZtABaNWQJ/6<,FvmU8HD?!*lKz=oR]4;0S)T\\"c_97}Y@XwVg.^x{e&r2|j(sC[y1qI$#+:h%PL>fkdiM5n~\`3",
+                      local_1 = "" + (param_0 || ""),
+                      local_2 = local_1.length,
+                      local_3 = [],
+                      local_4 = 0,
+                      local_5 = 0,
+                      local_6 = -1
+                    );
+                    for (local_7 = 0; local_7 < local_2; local_7++) {
+                      local_8 = local_0.indexOf(local_1[local_7]);
+                      if (local_8 === -1) continue;
+                      if (local_6 < 0) {
+                        local_6 = local_8
+                      } else {
+                        var_65(local_6 += local_8 * 91, local_4 |= local_6 << local_5, local_5 += (local_6 & 8191) > 88 ? 13 : 14);
+                        do {
+                          var_65(local_3.push(local_4 & 255), local_4 >>= 8, local_5 -= 8)
+                        } while (local_5 > 7);
+                        local_6 = -1
+                      }
+                    }
+                    if (local_6 > -1) {
+                      local_3.push((local_4 | local_6 << local_5) & 255)
+                    }
+                    return dkJAw8(local_3);
+                  }`;
+        const result = simplifyDecoding(code).replaceAll(/\r\n/g, '\n');
+        
+        strictEqual(result, `function __Buffer(param_0) {
+  const local_3 = decodeHelper(
+    "uOpGbEZtABaNWQJ/6<,FvmU8HD?!*lKz=oR]4;0S)T\\"c_97}Y@XwVg.^x{e&r2|j(sC[y1qI$#+:h%PL>fkdiM5n~\`3",
+    param_0
+  );;
+
+  return dkJAw8(local_3);
+}`.replaceAll(/\r\n/g, '\n'));
+    });
+    it('should handle functions with var2', () => {
+        const code = `function __Buffer(param_0) {
+      var_65(
+        local_0 = "u=/968;\`1[&.RbFU3Q><YhEif,buildCharMap|@ZTexGH)s^d2Wt!#~C(+vyP_{wLgnz:%S*kjXl$Io5\\"BJ0D?7M4V}qpKNmOA]c",
+        local_1 = "" + (param_0 || ""),
+        local_2 = local_1.length,
+        local_3 = [],
+        local_4 = 0,
+        local_5 = 0,
+        local_6 = -1
+      );
+      for (local_7 = 0; local_7 < local_2; local_7++) {
+        local_8 = local_0.indexOf(local_1[local_7]);
+        if (local_8 === -1) continue;
+        if (local_6 < 0) {
+          local_6 = local_8
+        } else {
+          var_65(local_6 += local_8 * 91, local_4 |= local_6 << local_5, local_5 += (local_6 & 8191) > 88 ? 13 : 14);
+          do {
+            var_65(local_3.push(local_4 & 255), local_4 >>= 8, local_5 -= 8)
+          } while (local_5 > 7);
+          local_6 = -1
+        }
+      }
+      if (local_6 > -1) {
+        local_3.push((local_4 | local_6 << local_5) & 255)
+      }
+      return dkJAw8(local_3);
+    }`;
+        const result = simplifyDecoding(code).replaceAll(/\r\n/g, '\n');
+        
+        strictEqual(result, `function __Buffer(param_0) {
+  const local_3 = decodeHelper(
+    "u=/968;\`1[&.RbFU3Q><YhEif,buildCharMap|@ZTexGH)s^d2Wt!#~C(+vyP_{wLgnz:%S*kjXl$Io5\\"BJ0D?7M4V}qpKNmOA]c",
+    param_0
+  );;
+
+  return dkJAw8(local_3);
+}`.replaceAll(/\r\n/g, '\n'));
+    });
+    it('should handle empty functions', () => {
+        const code = `function __Buffer(param_0) {}`;
+        const result = simplifyDecoding(code).replaceAll(/\r\n/g, '\n');
+        
+        strictEqual(result, `function __Buffer(param_0) {}`.replaceAll(/\r\n/g, '\n'));
+    });
+});
+
+
+
 describe('Simplify spread parameters', () => {
 
     it('should handle functions expression with zero parameters', () => {
@@ -271,6 +384,31 @@ describe('Simplify spread parameters', () => {
     }
     var_65(local_0 = ZVvKFvy(local_0 ^ local_0 >>> 16, 2246822507) ^ ZVvKFvy(local_1 ^ local_1 >>> 13, 3266489909), local_1 = ZVvKFvy(local_1 ^ local_1 >>> 16, 2246822507) ^ ZVvKFvy(local_0 ^ local_0 >>> 13, 3266489909));
     return 0x100000000 * (2097151 & local_1) + (local_0 >>> 0);
+}`.replaceAll(/\r\n/g, '\n'));
+    });
+
+    it('should handle parameters with class', () => {
+        const code = `class test{
+        static var_63(...DVg62f) {
+    var_65(DVg62f["length"] = 2, DVg62f[74] = 0xdeadbeef ^ DVg62f[1], DVg62f["b"] = 0x41c6ce57 ^ DVg62f[1]);
+    for (var global = 0, __globalObject; global < DVg62f[0].length; global++) {
+      var_65(__globalObject = DVg62f[0].charCodeAt(global), DVg62f[74] = ZVvKFvy(DVg62f[74] ^ __globalObject, 0x9e3779b1), DVg62f["b"] = ZVvKFvy(DVg62f["b"] ^ __globalObject, 0x5f356495))
+    }
+    var_65(DVg62f[74] = ZVvKFvy(DVg62f[74] ^ DVg62f[74] >>> 16, 2246822507) ^ ZVvKFvy(DVg62f["b"] ^ DVg62f["b"] >>> 13, 3266489909), DVg62f["b"] = ZVvKFvy(DVg62f["b"] ^ DVg62f["b"] >>> 16, 2246822507) ^ ZVvKFvy(DVg62f[74] ^ DVg62f[74] >>> 13, 3266489909));
+    return 0x100000000 * (2097151 & DVg62f["b"]) + (DVg62f[74] >>> 0)
+}
+}`;
+        const result = simplifySpreadParameters(code).replaceAll(/\r\n/g, '\n');
+        
+        strictEqual(result, `class test{
+        static var_63(param_0, param_1) {
+    var_65(local_0 = 0xdeadbeef ^ param_1, local_1 = 0x41c6ce57 ^ param_1);
+    for (var global = 0, __globalObject; global < param_0.length; global++) {
+      var_65(__globalObject = param_0.charCodeAt(global), local_0 = ZVvKFvy(local_0 ^ __globalObject, 0x9e3779b1), local_1 = ZVvKFvy(local_1 ^ __globalObject, 0x5f356495))
+    }
+    var_65(local_0 = ZVvKFvy(local_0 ^ local_0 >>> 16, 2246822507) ^ ZVvKFvy(local_1 ^ local_1 >>> 13, 3266489909), local_1 = ZVvKFvy(local_1 ^ local_1 >>> 16, 2246822507) ^ ZVvKFvy(local_0 ^ local_0 >>> 13, 3266489909));
+    return 0x100000000 * (2097151 & local_1) + (local_0 >>> 0);
+}
 }`.replaceAll(/\r\n/g, '\n'));
     });
 });
