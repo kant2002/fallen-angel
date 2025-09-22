@@ -4,6 +4,7 @@
   "description": "",
   "main": "cleanup.js",
   "scripts": {
+    "start": "node cleanup.js",
     "test": "npx mocha"
   },
   "keywords": [],
