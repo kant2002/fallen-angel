@@ -7,7 +7,8 @@ import {
     getCleanedFileName,
     getParametersFileName,
     getEnvironmentFileName,
-    extractArrayName
+    extractArrayName,
+    inlineDecodeHelperCalls
 } from "./lib/index.js";
 
 const argv = process.argv.slice(2);
@@ -34,6 +35,7 @@ if (staticValues === null) {
 beautified = inlineStringConcats(beautified);
 beautified = simplifySpreadParameters(beautified);
 beautified = simplifyDecoding(beautified); // You can detect this in code by simply searching for 88 ? 13 : 14
+beautified = inlineDecodeHelperCalls(beautified);
 beautified += helperFunctionCode;
 
 await fs.writeFile(getCleanedFileName(sourceFile), beautified);

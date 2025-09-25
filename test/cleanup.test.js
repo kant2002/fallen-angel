@@ -5,7 +5,8 @@ import {
     simplifySpreadParameters,
     simplifyDecoding,
     getEnvironmentFileName,
-    extractArrayName
+    extractArrayName,
+    inlineDecodeHelperCalls
 } from '../lib/index.js';
 
 describe('Parameter Parsing', () => {
@@ -443,5 +444,51 @@ describe('Finding constants array', () => {
         const result = extractArrayName(code);
         
         strictEqual(result, `h8F1BC`);
+    });
+});
+
+describe('Inline decodeHelper calls', () => {
+    // ------------------------------------------------------------------------
+    it('Inline decodeHelper calls', () => {
+        const code = `let x = (async (__Array, utf8ArrayToStr) => {
+  var_163(X_9cU8(__globalObject), X_9cU8(__TextDecoder));
+
+  function __TextDecoder(param_0) {
+    const local_3 = decodeHelper(
+      "D]Lf<B)R.;e1P7+~,U*vCaQHWndXEb?54{YM2ZGtiSJm\\":FO|kzu[I#lxN@Ko!Vqhp/8Ayg9jw$}\`(rsc%=&3>0_6^T",
+      param_0
+    );;
+
+    return gDfejD(local_3);
+  }
+
+  function __globalObject(param_0) {
+    if (typeof bX[param_0] === "undefined") {
+      return bX[param_0] = __TextDecoder(var_155[param_0]);
+    }
+    return bX[param_0];
+  }
+  if (__Array) return " (standalone)";
+  if (utf8ArrayToStr === (await __Uint8Array())) return __globalObject(0x103);
+  return ""
+})`;
+        const result = inlineDecodeHelperCalls(code).replaceAll(/\r\n/g, '\n');
+        
+        strictEqual(result, `let x = (async (__Array, utf8ArrayToStr) => {
+  var_163(X_9cU8(__globalObject), X_9cU8(__TextDecoder));
+
+  function __globalObject(param_0) {
+    if (typeof bX[param_0] === "undefined") {
+      return bX[param_0] = gDfejD(decodeHelper(
+        "D]Lf<B)R.;e1P7+~,U*vCaQHWndXEb?54{YM2ZGtiSJm\\":FO|kzu[I#lxN@Ko!Vqhp/8Ayg9jw$}\`(rsc%=&3>0_6^T",
+        var_155[param_0]
+      ));
+    }
+    return bX[param_0];
+  }
+  if (__Array) return " (standalone)";
+  if (utf8ArrayToStr === (await __Uint8Array())) return __globalObject(0x103);
+  return ""
+})`.replaceAll(/\r\n/g, '\n'));
     });
 });
