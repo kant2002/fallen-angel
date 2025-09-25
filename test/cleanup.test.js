@@ -3,7 +3,9 @@ import {
     parseParameters,
     extractArrayValues,
     simplifySpreadParameters,
-    simplifyDecoding
+    simplifyDecoding,
+    getEnvironmentFileName,
+    extractArrayName
 } from '../lib/index.js';
 
 describe('Parameter Parsing', () => {
@@ -19,6 +21,23 @@ describe('Parameter Parsing', () => {
         strictEqual(result.get("SIMMwg"), "Blob");
         strictEqual(result.get("h0soF4n"), "URL");
         strictEqual(result.get("az"), "typeof global");
+    });
+});
+
+describe('File name building', () => {
+    it('should build environment file name correctly', () => {
+        const result = getEnvironmentFileName("gsap-3.12.2.min.js");
+        strictEqual(result, "gsap-3.12.2.min.environment.js");
+    });
+
+    it('should handle files without extension', () => {
+        const result = getEnvironmentFileName("file");
+        strictEqual(result, "file.environment.js");
+    });
+
+    it('should handle files with multiple dots', () => {
+        const result = getEnvironmentFileName("a.b.c");
+        strictEqual(result, "a.b.c.environment.js");
     });
 });
 
@@ -410,5 +429,19 @@ describe('Simplify spread parameters', () => {
     return 0x100000000 * (2097151 & local_1) + (local_0 >>> 0);
 }
 }`.replaceAll(/\r\n/g, '\n'));
+    });
+});
+
+
+describe('Finding constants array', () => {
+    it('should handle parameters with class', () => {
+        const code = `function dummy(var_1) {
+  var bX, var_155, __globalObject, __TextDecoder, __Uint8Array, __Buffer, __String, __Array, utf8ArrayToStr, M7xYU0;
+  const h8F1BC = [0x0, 0x1];
+  }
+  `;
+        const result = extractArrayName(code);
+        
+        strictEqual(result, `h8F1BC`);
     });
 });
