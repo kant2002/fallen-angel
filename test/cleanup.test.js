@@ -7,7 +7,8 @@ import {
     getEnvironmentFileName,
     extractArrayName,
     inlineDecodeHelperCalls,
-    inlineStringConcats
+    inlineStringConcats,
+    replaceParameters
 } from '../lib/index.js';
 
 describe('Parameter Parsing', () => {
@@ -23,6 +24,14 @@ describe('Parameter Parsing', () => {
         strictEqual(result.get("SIMMwg"), "Blob");
         strictEqual(result.get("h0soF4n"), "URL");
         strictEqual(result.get("az"), "typeof global");
+    });
+    it('Replace parsed parameters', () => {
+        const params = `{get"TPnx8Ws"(){return global},get"eSwxse9"(){return module},set"eSwxse9"(var_1){return module=var_1},get"WtbISz"(){return process},get"bbHLV3d"(){return Blob},get"LEN0KdE"(){return URL},get"var_173"(){return List},get"cr"(){return typeof global}}`;
+        const result = parseParameters(params);
+        let code = `("undefined" != typeof window ? window : "undefined" != var_1["cr"] ? var_1["TPnx8Ws"] : this)`;
+
+        code = replaceParameters(code, result, "var_1");
+        strictEqual(code, `("undefined" != typeof window ? window : "undefined" != typeof global ? global : this)`);
     });
 });
 
