@@ -6,7 +6,8 @@ import {
     simplifyDecoding,
     getEnvironmentFileName,
     extractArrayName,
-    inlineDecodeHelperCalls
+    inlineDecodeHelperCalls,
+    inlineStringConcats
 } from '../lib/index.js';
 
 describe('Parameter Parsing', () => {
@@ -490,5 +491,22 @@ describe('Inline decodeHelper calls', () => {
   if (utf8ArrayToStr === (await __Uint8Array())) return __globalObject(0x103);
   return ""
 })`.replaceAll(/\r\n/g, '\n'));
+    });
+});
+
+describe('Simplify string concatenations', () => {
+    // ------------------------------------------------------------------------
+    it('Simple calls', () => {
+        const code = `let x = "1" + "2"`;
+        const result = inlineStringConcats(code).replaceAll(/\r\n/g, '\n');
+
+        strictEqual(result, `let x = "12"`);
+    });
+    // ------------------------------------------------------------------------
+    it('Calls chain', () => {
+        const code = `let x = "1" + "2" + "3"`;
+        const result = inlineStringConcats(code).replaceAll(/\r\n/g, '\n');
+
+        strictEqual(result, `let x = "123"`);
     });
 });

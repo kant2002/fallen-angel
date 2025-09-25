@@ -30,7 +30,6 @@ if (staticValues === null) {
     throw new Error("Failed to extract static values");
 } else {
     beautified = replaceParameters(beautified, staticValues, basicArrayName);
-
 }
 beautified = inlineStringConcats(beautified);
 beautified = simplifySpreadParameters(beautified);
